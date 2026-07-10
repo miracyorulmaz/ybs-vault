@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Search, User, Lock, Mail, Sparkles, ChevronRight, GraduationCap, Layers, FileText, X, UploadCloud } from "lucide-react";
+import { Search, User, Lock, Mail, Sparkles, ChevronRight, ChevronLeft, GraduationCap, Layers, FileText, X, UploadCloud, LogOut } from "lucide-react";
 
 const ZORUNLU = {
   "1-1": {
@@ -149,7 +149,7 @@ function LoginScreen({ onLogin }) {
       setBasarili(true);
       return;
     }
-    onLogin();
+    onLogin(email);
   };
 
   return (
@@ -277,10 +277,7 @@ function Sidebar({ view, setView, activeYariyil, setActiveYariyil }) {
               {s.yariyillar.map((yid) => (
                 <button
                   key={yid}
-                  onClick={() => {
-                    setView("dashboard");
-                    setActiveYariyil(yid);
-                  }}
+                  onClick={() => setActiveYariyil(yid)}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                     view === "dashboard" && activeYariyil === yid
                       ? "bg-blue-500/10 text-blue-300 border border-blue-500/20"
@@ -312,20 +309,60 @@ function Sidebar({ view, setView, activeYariyil, setActiveYariyil }) {
   );
 }
 
-function TopBar({ query, setQuery }) {
+function TopBar({ query, setQuery, canGoBack, onBack, email, onLogout }) {
+  const [profilAcik, setProfilAcik] = useState(false);
+
   return (
     <div className="flex items-center justify-between px-8 py-5 border-b border-white/5">
-      <div className="relative w-80">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" strokeWidth={1.5} />
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Ders veya hoca ara..."
-          className="w-full bg-white/[0.03] border border-white/5 rounded-xl py-2.5 pl-10 pr-4 text-sm text-zinc-300 placeholder-zinc-600 outline-none focus:border-blue-500/30 transition-all"
-        />
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onBack}
+          disabled={!canGoBack}
+          className={`w-9 h-9 rounded-lg border flex items-center justify-center transition-colors shrink-0 ${
+            canGoBack
+              ? "border-white/5 bg-white/[0.03] hover:bg-white/[0.06] text-zinc-400"
+              : "border-white/5 bg-white/[0.01] text-zinc-700 cursor-not-allowed"
+          }`}
+        >
+          <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
+        </button>
+        <div className="relative w-80">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" strokeWidth={1.5} />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Ders veya hoca ara..."
+            className="w-full bg-white/[0.03] border border-white/5 rounded-xl py-2.5 pl-10 pr-4 text-sm text-zinc-300 placeholder-zinc-600 outline-none focus:border-blue-500/30 transition-all"
+          />
+        </div>
       </div>
-      <div className="w-9 h-9 rounded-full bg-white/[0.05] border border-white/5 flex items-center justify-center">
-        <User className="w-4 h-4 text-zinc-400" strokeWidth={1.5} />
+
+      <div className="relative">
+        <button
+          onClick={() => setProfilAcik((v) => !v)}
+          className="w-9 h-9 rounded-full bg-white/[0.05] border border-white/5 hover:border-white/10 flex items-center justify-center transition-colors"
+        >
+          <User className="w-4 h-4 text-zinc-400" strokeWidth={1.5} />
+        </button>
+
+        {profilAcik && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => setProfilAcik(false)} />
+            <div className="absolute right-0 top-11 z-20 w-56 rounded-xl border border-white/5 bg-zinc-950 shadow-2xl shadow-black/50 p-1.5">
+              <div className="px-3 py-2.5 border-b border-white/5 mb-1">
+                <p className="text-zinc-500 text-[11px] mb-0.5">Giriş yapılan hesap</p>
+                <p className="text-zinc-300 text-xs font-mono truncate">{email || "b241306378@sakarya.edu.tr"}</p>
+              </div>
+              <button
+                onClick={onLogout}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-400 hover:bg-red-500/[0.08] transition-colors"
+              >
+                <LogOut className="w-4 h-4" strokeWidth={1.5} />
+                Çıkış Yap
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -498,20 +535,62 @@ function SecmeliHavuzu({ query, onOpen }) {
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [email, setEmail] = useState("");
   const [view, setView] = useState("dashboard");
   const [activeYariyil, setActiveYariyil] = useState("1-1");
   const [query, setQuery] = useState("");
   const [secilenDers, setSecilenDers] = useState(null);
+  const [gecmis, setGecmis] = useState([]);
+
+  const navigate = (yeniView, yeniYariyil) => {
+    setGecmis((g) => [...g, { view, activeYariyil }]);
+    setView(yeniView);
+    if (yeniYariyil) setActiveYariyil(yeniYariyil);
+  };
+
+  const geriGit = () => {
+    setGecmis((g) => {
+      if (g.length === 0) return g;
+      const onceki = g[g.length - 1];
+      setView(onceki.view);
+      setActiveYariyil(onceki.activeYariyil);
+      return g.slice(0, -1);
+    });
+  };
+
+  const cikisYap = () => {
+    setLoggedIn(false);
+    setEmail("");
+    setView("dashboard");
+    setActiveYariyil("1-1");
+    setQuery("");
+    setSecilenDers(null);
+    setGecmis([]);
+  };
 
   if (!loggedIn) {
-    return <LoginScreen onLogin={() => setLoggedIn(true)} />;
+    return (
+      <LoginScreen
+        onLogin={(girilenMail) => {
+          setEmail(girilenMail);
+          setLoggedIn(true);
+        }}
+      />
+    );
   }
 
   return (
     <div className="min-h-screen w-full flex bg-zinc-950">
-      <Sidebar view={view} setView={setView} activeYariyil={activeYariyil} setActiveYariyil={setActiveYariyil} />
+      <Sidebar view={view} setView={(v) => navigate(v)} activeYariyil={activeYariyil} setActiveYariyil={(y) => navigate("dashboard", y)} />
       <main className="flex-1">
-        <TopBar query={query} setQuery={setQuery} />
+        <TopBar
+          query={query}
+          setQuery={setQuery}
+          canGoBack={gecmis.length > 0}
+          onBack={geriGit}
+          email={email}
+          onLogout={cikisYap}
+        />
         {view === "dashboard" ? (
           <Dashboard activeYariyil={activeYariyil} query={query} onOpen={setSecilenDers} />
         ) : (
