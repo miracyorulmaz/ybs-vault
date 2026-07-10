@@ -117,51 +117,142 @@ const SECMELI = [
   { kod: "YBS 354", ad: "Veri Madenciliği ve İş Zekası", notlar: [] },
 ];
 
+const OGRENCI_MAIL_REGEX = /^b\d{9}@sakarya\.edu\.tr$/;
+
 function LoginScreen({ onLogin }) {
+  const [mod, setMod] = useState("giris");
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
+  const [pass2, setPass2] = useState("");
+  const [hata, setHata] = useState("");
+  const [basarili, setBasarili] = useState(false);
+
+  const mailGecerliMi = email.length === 0 || OGRENCI_MAIL_REGEX.test(email);
+
+  const handleSubmit = () => {
+    setHata("");
+    setBasarili(false);
+
+    if (!OGRENCI_MAIL_REGEX.test(email)) {
+      setHata("Mail adresi b241306378@sakarya.edu.tr formatında olmalı.");
+      return;
+    }
+    if (pass.length < 6) {
+      setHata("Şifre en az 6 karakter olmalı.");
+      return;
+    }
+    if (mod === "kayit") {
+      if (pass !== pass2) {
+        setHata("Şifreler eşleşmiyor.");
+        return;
+      }
+      setBasarili(true);
+      return;
+    }
+    onLogin();
+  };
+
   return (
     <div className="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-zinc-950">
       <div className="pointer-events-none absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-blue-500/5 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-purple-500/5 blur-3xl" />
       <div className="relative w-full max-w-sm mx-4 rounded-2xl border border-white/5 bg-white/[0.03] backdrop-blur-xl shadow-2xl shadow-black/40 p-8">
-        <div className="flex flex-col items-center mb-8">
+        <div className="flex flex-col items-center mb-6">
           <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
             <GraduationCap className="w-6 h-6 text-blue-400" strokeWidth={1.5} />
           </div>
           <h1 className="text-white text-xl font-semibold tracking-tight">YBS Vault</h1>
           <p className="text-zinc-500 text-xs mt-2 text-center leading-relaxed">
-            Sadece <span className="font-mono text-zinc-400">@sakarya.edu.tr</span> uzantılı mail adresleriyle giriş yapılabilir.
+            Sadece <span className="font-mono text-zinc-400">b241306378@sakarya.edu.tr</span> formatındaki öğrenci mailleriyle giriş yapılabilir.
           </p>
         </div>
-        <div className="space-y-3">
-          <div className="relative">
-            <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" strokeWidth={1.5} />
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              type="email"
-              placeholder="ogrenci@sakarya.edu.tr"
-              className="w-full bg-white/[0.03] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-blue-500/30 focus:bg-white/[0.05] transition-all"
-            />
-          </div>
-          <div className="relative">
-            <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" strokeWidth={1.5} />
-            <input
-              value={pass}
-              onChange={(e) => setPass(e.target.value)}
-              type="password"
-              placeholder="Şifre"
-              className="w-full bg-white/[0.03] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-blue-500/30 focus:bg-white/[0.05] transition-all"
-            />
-          </div>
+
+        <div className="flex gap-1 mb-6 bg-white/[0.03] border border-white/5 rounded-xl p-1">
+          <button
+            onClick={() => {
+              setMod("giris");
+              setHata("");
+              setBasarili(false);
+            }}
+            className={`flex-1 text-sm py-2 rounded-lg transition-colors ${
+              mod === "giris" ? "bg-blue-500/10 text-blue-300 border border-blue-500/20" : "text-zinc-500 hover:text-zinc-300"
+            }`}
+          >
+            Giriş Yap
+          </button>
+          <button
+            onClick={() => {
+              setMod("kayit");
+              setHata("");
+              setBasarili(false);
+            }}
+            className={`flex-1 text-sm py-2 rounded-lg transition-colors ${
+              mod === "kayit" ? "bg-blue-500/10 text-blue-300 border border-blue-500/20" : "text-zinc-500 hover:text-zinc-300"
+            }`}
+          >
+            Üye Ol
+          </button>
         </div>
-        <button
-          onClick={onLogin}
-          className="mt-6 w-full bg-blue-500/90 hover:bg-blue-500 text-white text-sm font-medium py-3 rounded-xl transition-all shadow-lg shadow-blue-500/10"
-        >
-          Giriş Yap
-        </button>
+
+        {basarili ? (
+          <div className="flex flex-col items-center text-center py-4">
+            <div className="w-11 h-11 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
+              <Mail className="w-5 h-5 text-blue-400" strokeWidth={1.5} />
+            </div>
+            <p className="text-zinc-200 text-sm mb-1">Doğrulama maili gönderildi.</p>
+            <p className="text-zinc-600 text-xs leading-relaxed">
+              <span className="font-mono text-zinc-400">{email}</span> adresine gönderilen linke tıklayarak hesabını onaylaman gerekiyor.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-3">
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" strokeWidth={1.5} />
+                <input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  placeholder="b241306378@sakarya.edu.tr"
+                  className={`w-full bg-white/[0.03] border rounded-xl py-3 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:bg-white/[0.05] transition-all ${
+                    mailGecerliMi ? "border-white/5 focus:border-blue-500/30" : "border-red-500/30 focus:border-red-500/40"
+                  }`}
+                />
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" strokeWidth={1.5} />
+                <input
+                  value={pass}
+                  onChange={(e) => setPass(e.target.value)}
+                  type="password"
+                  placeholder="Şifre"
+                  className="w-full bg-white/[0.03] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-blue-500/30 focus:bg-white/[0.05] transition-all"
+                />
+              </div>
+              {mod === "kayit" && (
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" strokeWidth={1.5} />
+                  <input
+                    value={pass2}
+                    onChange={(e) => setPass2(e.target.value)}
+                    type="password"
+                    placeholder="Şifre (tekrar)"
+                    className="w-full bg-white/[0.03] border border-white/5 rounded-xl py-3 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-blue-500/30 focus:bg-white/[0.05] transition-all"
+                  />
+                </div>
+              )}
+            </div>
+
+            {hata && <p className="text-red-400 text-xs mt-3">{hata}</p>}
+
+            <button
+              onClick={handleSubmit}
+              className="mt-6 w-full bg-blue-500/90 hover:bg-blue-500 text-white text-sm font-medium py-3 rounded-xl transition-all shadow-lg shadow-blue-500/10"
+            >
+              {mod === "giris" ? "Giriş Yap" : "Üye Ol"}
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
