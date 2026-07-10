@@ -1,11 +1,14 @@
 import React, { useState, useMemo } from "react";
-import { Search, User, Lock, Mail, Sparkles, ChevronRight, ChevronLeft, GraduationCap, Layers, FileText, X, UploadCloud, LogOut } from "lucide-react";
+import { Search, User, Lock, Mail, Sparkles, ChevronRight, ChevronLeft, GraduationCap, Layers, FileText, X, UploadCloud, LogOut, ThumbsUp, ThumbsDown, Star, Heart } from "lucide-react";
 
 const ZORUNLU = {
   "1-1": {
     label: "1. Sınıf · 1. Yarıyıl",
     dersler: [
-      { ad: "Genel Matematik", hocalar: ["Dr.Öğr.Üyesi Mustafa Koç"], notlar: [] },
+      { ad: "Genel Matematik", hocalar: ["Dr.Öğr.Üyesi Mustafa Koç"], notlar: [
+        { id: "genel-matematik-1", baslik: "Vize öncesi özet - limit ve türev", yukleyen: "b241306378", tarih: "12 Kas 2025" },
+        { id: "genel-matematik-2", baslik: "2023 final çıkmış sorular", yukleyen: "b220112233", tarih: "3 Oca 2026" },
+      ] },
       { ad: "İktisada Giriş", hocalar: ["Dr.Öğr.Üyesi Gökhan Güven"], notlar: [] },
       { ad: "Bilişim Sistemlerine Giriş", hocalar: ["Prof.Dr. Aykut Hamit Turan", "Doç.Dr. Naciye Güliz Uğur", "Doç.Dr. Salabat Khan"], notlar: [] },
       { ad: "İşletme Bilimine Giriş", hocalar: ["Dr.Öğr.Üyesi Merve Türkmen Barutçu", "Arş. Gör.Dr. Volkan Göktaş"], notlar: [] },
@@ -292,7 +295,7 @@ function Sidebar({ view, setView, activeYariyil, setActiveYariyil }) {
         </div>
       </div>
 
-      <div className="border-t border-white/5 pt-4">
+      <div className="border-t border-white/5 pt-4 flex flex-col gap-1">
         <button
           onClick={() => setView("secmeli")}
           className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
@@ -303,6 +306,17 @@ function Sidebar({ view, setView, activeYariyil, setActiveYariyil }) {
         >
           <Sparkles className="w-4 h-4" strokeWidth={1.5} />
           Seçmeli Dersler Havuzu
+        </button>
+        <button
+          onClick={() => setView("favoriler")}
+          className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            view === "favoriler"
+              ? "bg-pink-500/10 text-pink-300 border border-pink-500/20"
+              : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03] border border-transparent"
+          }`}
+        >
+          <Heart className="w-4 h-4" strokeWidth={1.5} />
+          Favori Notlarım
         </button>
       </div>
     </aside>
@@ -409,7 +423,54 @@ function SecmeliCard({ ders, onOpen }) {
   );
 }
 
-function DersNotPaneli({ ders, onClose }) {
+function NotKarti({ not, favoriMi, oy, onFavoriToggle, onOyVer }) {
+  return (
+    <div className="rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3">
+      <div className="flex items-center gap-3">
+        <FileText className="w-4 h-4 text-zinc-500 shrink-0" strokeWidth={1.5} />
+        <div className="min-w-0 flex-1">
+          <p className="text-zinc-200 text-sm truncate">{not.baslik}</p>
+          <p className="text-zinc-600 text-xs">{not.yukleyen} · {not.tarih}</p>
+        </div>
+        <button
+          onClick={() => onFavoriToggle(not.id)}
+          className="shrink-0 w-8 h-8 rounded-lg hover:bg-white/[0.05] flex items-center justify-center transition-colors"
+        >
+          <Heart
+            className={`w-4 h-4 transition-colors ${favoriMi ? "text-pink-400 fill-pink-400" : "text-zinc-600"}`}
+            strokeWidth={1.5}
+          />
+        </button>
+      </div>
+      <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5">
+        <button
+          onClick={() => onOyVer(not.id, "faydali")}
+          className={`flex items-center gap-1.5 text-xs rounded-lg px-2.5 py-1.5 border transition-colors ${
+            oy?.kullaniciOy === "faydali"
+              ? "text-green-300 bg-green-500/[0.1] border-green-500/20"
+              : "text-zinc-500 bg-white/[0.02] border-white/5 hover:text-zinc-300"
+          }`}
+        >
+          <ThumbsUp className="w-3.5 h-3.5" strokeWidth={1.5} />
+          Faydalı {oy?.faydali ? `· ${oy.faydali}` : ""}
+        </button>
+        <button
+          onClick={() => onOyVer(not.id, "gereksiz")}
+          className={`flex items-center gap-1.5 text-xs rounded-lg px-2.5 py-1.5 border transition-colors ${
+            oy?.kullaniciOy === "gereksiz"
+              ? "text-red-300 bg-red-500/[0.1] border-red-500/20"
+              : "text-zinc-500 bg-white/[0.02] border-white/5 hover:text-zinc-300"
+          }`}
+        >
+          <ThumbsDown className="w-3.5 h-3.5" strokeWidth={1.5} />
+          Gereksiz {oy?.gereksiz ? `· ${oy.gereksiz}` : ""}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function DersNotPaneli({ ders, onClose, favoriler, oylar, onFavoriToggle, onOyVer }) {
   if (!ders) return null;
   const baslik = ders.ad;
   const altBilgi = ders.kod ? ders.kod : ders.hocalar?.join(" · ");
@@ -445,18 +506,16 @@ function DersNotPaneli({ ders, onClose }) {
               </button>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
-              {ders.notlar.map((not, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3"
-                >
-                  <FileText className="w-4 h-4 text-zinc-500 shrink-0" strokeWidth={1.5} />
-                  <div className="min-w-0">
-                    <p className="text-zinc-200 text-sm truncate">{not.baslik}</p>
-                    <p className="text-zinc-600 text-xs">{not.yukleyen} · {not.tarih}</p>
-                  </div>
-                </div>
+            <div className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto pr-1">
+              {ders.notlar.map((not) => (
+                <NotKarti
+                  key={not.id}
+                  not={not}
+                  favoriMi={favoriler.includes(not.id)}
+                  oy={oylar[not.id]}
+                  onFavoriToggle={onFavoriToggle}
+                  onOyVer={onOyVer}
+                />
               ))}
             </div>
           )}
@@ -533,6 +592,62 @@ function SecmeliHavuzu({ query, onOpen }) {
   );
 }
 
+const TUM_DERSLER = [
+  ...Object.values(ZORUNLU).flatMap((y) => y.dersler || []),
+  ...SECMELI,
+];
+
+function FavorilerimGorunumu({ favoriler, oylar, onFavoriToggle, onOyVer }) {
+  const favoriNotlar = useMemo(() => {
+    const sonuc = [];
+    TUM_DERSLER.forEach((ders) => {
+      (ders.notlar || []).forEach((not) => {
+        if (favoriler.includes(not.id)) {
+          sonuc.push({ ...not, dersAdi: ders.ad });
+        }
+      });
+    });
+    return sonuc;
+  }, [favoriler]);
+
+  return (
+    <div className="p-8">
+      <div className="flex items-center gap-2 mb-6">
+        <Heart className="w-4 h-4 text-pink-400" strokeWidth={1.5} />
+        <h2 className="text-zinc-200 font-medium text-sm">Favori Notlarım</h2>
+        <span className="text-zinc-600 text-xs">· {favoriNotlar.length} not</span>
+      </div>
+
+      {favoriNotlar.length === 0 ? (
+        <div className="flex flex-col items-center text-center py-24">
+          <div className="w-11 h-11 rounded-xl bg-white/[0.03] border border-white/5 flex items-center justify-center mb-4">
+            <Heart className="w-5 h-5 text-zinc-600" strokeWidth={1.5} />
+          </div>
+          <p className="text-zinc-400 text-sm mb-1">Henüz favori not eklemedin.</p>
+          <p className="text-zinc-600 text-xs max-w-xs leading-relaxed">
+            Bir dersin notlarına girip beğendiğin notun yanındaki kalp ikonuna tıklayarak buraya ekleyebilirsin.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2 max-w-lg">
+          {favoriNotlar.map((not) => (
+            <div key={not.id}>
+              <p className="text-zinc-600 text-[11px] font-mono mb-1.5 px-1">{not.dersAdi}</p>
+              <NotKarti
+                not={not}
+                favoriMi={true}
+                oy={oylar[not.id]}
+                onFavoriToggle={onFavoriToggle}
+                onOyVer={onOyVer}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [email, setEmail] = useState("");
@@ -541,6 +656,26 @@ export default function App() {
   const [query, setQuery] = useState("");
   const [secilenDers, setSecilenDers] = useState(null);
   const [gecmis, setGecmis] = useState([]);
+  const [favoriler, setFavoriler] = useState([]);
+  const [oylar, setOylar] = useState({});
+
+  const favoriToggle = (notId) => {
+    setFavoriler((f) => (f.includes(notId) ? f.filter((id) => id !== notId) : [...f, notId]));
+  };
+
+  const oyVer = (notId, tip) => {
+    setOylar((o) => {
+      const mevcut = o[notId] || { faydali: 0, gereksiz: 0, kullaniciOy: null };
+      if (mevcut.kullaniciOy === tip) {
+        return { ...o, [notId]: { ...mevcut, [tip]: mevcut[tip] - 1, kullaniciOy: null } };
+      }
+      const guncel = { ...mevcut };
+      if (mevcut.kullaniciOy) guncel[mevcut.kullaniciOy] -= 1;
+      guncel[tip] += 1;
+      guncel.kullaniciOy = tip;
+      return { ...o, [notId]: guncel };
+    });
+  };
 
   const navigate = (yeniView, yeniYariyil) => {
     setGecmis((g) => [...g, { view, activeYariyil }]);
@@ -593,11 +728,20 @@ export default function App() {
         />
         {view === "dashboard" ? (
           <Dashboard activeYariyil={activeYariyil} query={query} onOpen={setSecilenDers} />
-        ) : (
+        ) : view === "secmeli" ? (
           <SecmeliHavuzu query={query} onOpen={setSecilenDers} />
+        ) : (
+          <FavorilerimGorunumu favoriler={favoriler} oylar={oylar} onFavoriToggle={favoriToggle} onOyVer={oyVer} />
         )}
       </main>
-      <DersNotPaneli ders={secilenDers} onClose={() => setSecilenDers(null)} />
+      <DersNotPaneli
+        ders={secilenDers}
+        onClose={() => setSecilenDers(null)}
+        favoriler={favoriler}
+        oylar={oylar}
+        onFavoriToggle={favoriToggle}
+        onOyVer={oyVer}
+      />
     </div>
   );
 }
